@@ -19,7 +19,7 @@ pipeline {
                     if (!params.NAME.matches("[a-zA-Z]+")) {
                         error "NAME must contain only letters (no numbers or special characters)."
                     }
-                    
+
                     // ולידציה למשתנה BIRTHDAY - רק מספרים בין 1 ל-31
                     def birthday = params.BIRTHDAY.toInteger()
                     if (birthday < 1 || birthday > 31) {
