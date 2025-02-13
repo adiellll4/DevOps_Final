@@ -38,7 +38,7 @@ pipeline {
         stage('Clone Repository') {
             steps {
 
-                git 'https://github.com/adiellll4/DevOps_Final'  // Replace with your repository URL
+                git 'https://github.com/adiellll4/DevOps_Final.git'  // Replace with your repository URL
             }
         }
 
