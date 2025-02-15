@@ -45,10 +45,11 @@ pipeline {
             }
         }
 
-        stage('Run Shell Script') {
+        stage('Run PowerShell Script') {
             steps {
                 script {
-                    def output = sh(script: "bash FinalProject.ps1 ${params.NAME} ${params.BIRTHDAY} ${params.BIRTHMONTH}", returnStdout: true).trim()
+                    // הרצת סקריפט PowerShell
+                    def output = sh(script: "powershell -ExecutionPolicy Bypass -File FinalProject.ps1 ${params.NAME} ${params.BIRTHDAY} ${params.BIRTHMONTH}", returnStdout: true).trim()
                     writeFile file: OUTPUT_FILE, text: "<html><body><h1>Output</h1><p>${output}</p></body></html>"
                 }
             }
