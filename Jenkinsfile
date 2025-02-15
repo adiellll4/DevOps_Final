@@ -2,7 +2,9 @@ pipeline {
     agent any
 
     parameters {
-        string(name: 'user_input', defaultValue: '0', description: 'A numeric parameter')
+        string(name: 'NAME', defaultValue: 'Adiel', description: 'Enter name')
+        string(name: 'BIRTHDAY', defaultValue: '1', description: 'Enter birthday (1-31)')
+        string(name: 'BIRTHMONTH', defaultValue: '1', description: 'Enter birth month (1-12)')
     }
 
     environment {
@@ -10,16 +12,43 @@ pipeline {
     }
 
     stages {
+        stage('Validate Parameters') {
+            steps {
+                script {
+                    if (!params.NAME.matches("[a-zA-Z]+")) {
+                        error "NAME must contain only letters (no numbers or special characters)."
+                    }
+                    def birthday = params.BIRTHDAY.toInteger()
+                    if (birthday < 1 || birthday > 31) {
+                        error "BIRTHDAY must be a number between 1 and 31."
+                    }
+                    def birthMonth = params.BIRTHMONTH.toInteger()
+                    if (birthMonth < 1 || birthMonth > 12) {
+                        error "BIRTHMONTH must be a number between 1 and 12."
+                    }
+                }
+            }
+        }
+
         stage('Clone Repository') {
             steps {
-                git 'https://github.com/szeevi/fibvar.git'  // Replace with your repository URL
+                git branch: 'main', url: 'https://github.com/adiellll4/DevOps_Final.git'
+            }
+        }
+
+        stage('Prepare Shell Script') {
+            steps {
+                script {
+                    // אם צריך להוסיף הרשאת הרצה לקובץ
+                    sh 'chmod +x FinalProject.sh'
+                }
             }
         }
 
         stage('Run Shell Script') {
             steps {
                 script {
-                    def output = sh(script: "bash fibvar.sh ${params.user_input}", returnStdout: true).trim()
+                    def output = sh(script: "bash FinalProject.sh ${params.NAME} ${params.BIRTHDAY} ${params.BIRTHMONTH}", returnStdout: true).trim()
                     writeFile file: OUTPUT_FILE, text: "<html><body><h1>Output</h1><p>${output}</p></body></html>"
                 }
             }
@@ -28,7 +57,7 @@ pipeline {
         stage('Display Parameter') {
             steps {
                 script {
-                    currentBuild.description = "Numeric parameter is ${params.user_input}"
+                    currentBuild.description = "Name: ${params.NAME}, Birthday: ${params.BIRTHDAY}, Birth Month: ${params.BIRTHMONTH}"
                 }
             }
         }
@@ -37,10 +66,39 @@ pipeline {
             steps {
                 script {
                     def description = currentBuild.description
-                    if (description.contains("${params.user_input}")) {
-                        echo "Parameter ${params.user_input} exists on the web page."
+                    if (description.contains("${params.NAME}")) {
+                        echo "Parameter ${params.NAME} exists on the web page."
                     } else {
-                        error "Parameter ${params.user_input} does not exist on the web page."
+                        error "Parameter ${params.NAME} does not exist on the web page."
+                    }
+                }
+            }
+        }
+
+        stage('Send HTTP Request') {
+            steps {
+                script {
+                    def outputContent = sh(script: "cat ${OUTPUT_FILE}", returnStdout: true).trim()
+                    def requestBody = """
+                        {
+                            "name": "${params.NAME}",
+                            "birthday": "${params.BIRTHDAY}",
+                            "birthMonth": "${params.BIRTHMONTH}",
+                            "output": "${outputContent}"
+                        }
+                    """
+                    try {
+                        def response = httpRequest(
+                            acceptType: 'APPLICATION_JSON', 
+                            contentType: 'APPLICATION_JSON', 
+                            httpMode: 'POST', 
+                            url: 'https://your-api-endpoint.com/your-path', 
+                            requestBody: requestBody
+                        )
+                        echo "Response: ${response}"
+                    } catch (Exception e) {
+                        echo "HTTP request failed: ${e.getMessage()}"
+                        error "Failed to send HTTP request."
                     }
                 }
             }
