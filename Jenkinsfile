@@ -2,47 +2,46 @@ pipeline {
     agent any
 
     parameters {
-        string(name: 'NAME', defaultValue: 'John Doe', description: 'Enter your name')
-        string(name: 'AGE', defaultValue: '30', description: 'Enter your age')
+        string(name: 'user_input', defaultValue: '0', description: 'A numeric parameter')
+    }
+
+    environment {
+        OUTPUT_FILE = 'output.html'
     }
 
     stages {
-        stage('Validate Input & Calculate Year of Birth') {
+        stage('Clone Repository') {
+            steps {
+                git 'https://github.com/szeevi/fibvar.git'  // Replace with your repository URL
+            }
+        }
+
+        stage('Run Shell Script') {
             steps {
                 script {
-                    def name = params.NAME.trim()
-                    def age = params.AGE.trim()
-                    def currentYear = new Date().format("yyyy").toInteger()
-                    def outputMessage = ""
+                    def output = sh(script: "bash fibvar.sh ${params.user_input}", returnStdout: true).trim()
+                    writeFile file: OUTPUT_FILE, text: "<html><body><h1>Output</h1><p>${output}</p></body></html>"
+                }
+            }
+        }
 
-                    // בדיקת שם – חייב להכיל רק אותיות ורווחים (ללא מספרים/תווים מיוחדים)
-                    if (!(name ==~ /^[A-Za-z\s]+$/)) {
-                        outputMessage = "<h2 style='color:red;'>Invalid Input: Name must contain only letters and spaces.</h2>"
-                        echo "Invalid name input!"
-                    } else if (!age.isInteger()) {
-                        outputMessage = "<h2 style='color:red;'>Invalid Input: Age must be a valid number.</h2>"
-                        echo "Invalid age input!"
+        stage('Display Parameter') {
+            steps {
+                script {
+                    currentBuild.description = "Numeric parameter is ${params.user_input}"
+                }
+            }
+        }
+
+        stage('Verify Parameter on Web Page') {
+            steps {
+                script {
+                    def description = currentBuild.description
+                    if (description.contains("${params.user_input}")) {
+                        echo "Parameter ${params.user_input} exists on the web page."
                     } else {
-                        def ageInt = age.toInteger()
-                        if (ageInt > 0 && ageInt < 150) {
-                            def birthYear = currentYear - ageInt
-                            outputMessage = "<h2>Hello ${name}!</h2><p>Your estimated birth year is: <strong>${birthYear}</strong></p>"
-                            echo "Valid input. Calculated birth year: ${birthYear}"
-                        } else {
-                            outputMessage = "<h2 style='color:red;'>Invalid Input: Age must be a positive number less than 150.</h2>"
-                            echo "Invalid age input!"
-                        }
+                        error "Parameter ${params.user_input} does not exist on the web page."
                     }
-
-                    // שמירת הפלט בקובץ HTML להצגה ב-Jenkins
-                    writeFile file: 'output.html', text: """
-                        <html>
-                        <head><title>Jenkins Output</title></head>
-                        <body>
-                        ${outputMessage}
-                        </body>
-                        </html>
-                    """
                 }
             }
         }
@@ -50,14 +49,14 @@ pipeline {
 
     post {
         always {
-            // פרסום הקובץ ב-Jenkins HTML Publisher Plugin
+            archiveArtifacts artifacts: OUTPUT_FILE, fingerprint: true
             publishHTML(target: [
                 allowMissing: false,
                 alwaysLinkToLastBuild: true,
                 keepAll: true,
-                reportDir: '',
-                reportFiles: 'output.html',
-                reportName: 'User Data Output'
+                reportDir: '.',
+                reportFiles: OUTPUT_FILE,
+                reportName: 'Shell Script Output'
             ])
         }
     }
