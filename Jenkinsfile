@@ -3,8 +3,8 @@ pipeline {
 
     parameters {
         string(name: 'NAME', defaultValue: 'Adiel', description: 'Enter name')
-        string(name: 'BIRTHDAY', defaultValue: '0', description: 'Enter birthday (1-31)')
-        string(name: 'BIRTHMONTH', defaultValue: '0', description: 'Enter birth month (1-12)')
+        string(name: 'BIRTHDAY', defaultValue: '1', description: 'Enter birthday (1-31)')
+        string(name: 'BIRTHMONTH', defaultValue: '1', description: 'Enter birth month (1-12)')
     }
 
     environment {
