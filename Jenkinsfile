@@ -15,18 +15,13 @@ pipeline {
         stage('Validate Parameters') {
             steps {
                 script {
-                    // ולידציה למשתנה NAME - אך ורק אותיות
                     if (!params.NAME.matches("[a-zA-Z]+")) {
                         error "NAME must contain only letters (no numbers or special characters)."
                     }
-
-                    // ולידציה למשתנה BIRTHDAY - רק מספרים בין 1 ל-31
                     def birthday = params.BIRTHDAY.toInteger()
                     if (birthday < 1 || birthday > 31) {
                         error "BIRTHDAY must be a number between 1 and 31."
                     }
-
-                    // ולידציה למשתנה BIRTHMONTH - רק מספרים בין 1 ל-12
                     def birthMonth = params.BIRTHMONTH.toInteger()
                     if (birthMonth < 1 || birthMonth > 12) {
                         error "BIRTHMONTH must be a number between 1 and 12."
@@ -38,15 +33,21 @@ pipeline {
         stage('Clone Repository') {
             steps {
                 git branch: 'main', url: 'https://github.com/adiellll4/DevOps_Final.git'
+            }
+        }
 
-              //  git 'https://github.com/adiellll4/DevOps_Final.git'  // Replace with your repository URL
+        stage('Prepare Shell Script') {
+            steps {
+                script {
+                    // אם צריך להוסיף הרשאת הרצה לקובץ
+                    sh 'chmod +x FinalProject.sh'
+                }
             }
         }
 
         stage('Run Shell Script') {
             steps {
                 script {
-                    // משתנים חדשים, אני משתמש בפרמטרים NAME, BIRTHDAY ו- BIRTHMONTH
                     def output = sh(script: "bash FinalProject.sh ${params.NAME} ${params.BIRTHDAY} ${params.BIRTHMONTH}", returnStdout: true).trim()
                     writeFile file: OUTPUT_FILE, text: "<html><body><h1>Output</h1><p>${output}</p></body></html>"
                 }
@@ -77,15 +78,28 @@ pipeline {
         stage('Send HTTP Request') {
             steps {
                 script {
-                    // שליחה ל-HTTP endpoint עם תוצאה מה-pipeline
-                    def response = httpRequest(
-                        acceptType: 'APPLICATION_JSON', 
-                        contentType: 'APPLICATION_JSON', 
-                        httpMode: 'POST', 
-                        url: 'https://your-api-endpoint.com/your-path', 
-                        requestBody: '{"name": "${params.NAME}", "birthday": "${params.BIRTHDAY}", "birthMonth": "${params.BIRTHMONTH}", "output": "${sh(script: "cat ${OUTPUT_FILE}", returnStdout: true).trim()}"}'
-                    )
-                    echo "Response: ${response}"
+                    def outputContent = sh(script: "cat ${OUTPUT_FILE}", returnStdout: true).trim()
+                    def requestBody = """
+                        {
+                            "name": "${params.NAME}",
+                            "birthday": "${params.BIRTHDAY}",
+                            "birthMonth": "${params.BIRTHMONTH}",
+                            "output": "${outputContent}"
+                        }
+                    """
+                    try {
+                        def response = httpRequest(
+                            acceptType: 'APPLICATION_JSON', 
+                            contentType: 'APPLICATION_JSON', 
+                            httpMode: 'POST', 
+                            url: 'https://your-api-endpoint.com/your-path', 
+                            requestBody: requestBody
+                        )
+                        echo "Response: ${response}"
+                    } catch (Exception e) {
+                        echo "HTTP request failed: ${e.getMessage()}"
+                        error "Failed to send HTTP request."
+                    }
                 }
             }
         }
@@ -105,3 +119,4 @@ pipeline {
         }
     }
 }
+
