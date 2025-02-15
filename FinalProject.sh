@@ -1,20 +1,16 @@
-#!/bin/bash
-
 # בקש מהמשתמש להזין את שמו הפרטי
-echo "הזן את שמך הפרטי:"
-read first_name
+Write-Host "הזן את שמך הפרטי:"
+$first_name = Read-Host
 
 # בקש מהמשתמש להזין את יום הלידה
-echo "הזן את יום הלידה (1-31):"
-read birth_day
+Write-Host "הזן את יום הלידה (1-31):"
+$birth_day = Read-Host
 
 # בקש מהמשתמש להזין את חודש הלידה
-echo "הזן את חודש הלידה (1-12):"
-read birth_month
+Write-Host "הזן את חודש הלידה (1-12):"
+$birth_month = Read-Host
 
-
-#נחינחילחמךל    
 # הצג את המידע שהוזן
-echo "השם שלך הוא: $first_name"
-echo "יום הלידה: $birth_day"
-echo "חודש הלידה: $birth_month"
+Write-Host "השם שלך הוא: $first_name"
+Write-Host "יום הלידה: $birth_day"
+Write-Host "חודש הלידה: $birth_month"
