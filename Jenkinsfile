@@ -40,7 +40,7 @@ pipeline {
             steps {
                 script {
                     // אם צריך להוסיף הרשאת הרצה לקובץ
-                    sh 'chmod +x FinalProject.sh'
+                    sh 'chmod +x FinalProject.ps1'
                 }
             }
         }
@@ -48,7 +48,7 @@ pipeline {
         stage('Run Shell Script') {
             steps {
                 script {
-                    def output = sh(script: "bash FinalProject.sh ${params.NAME} ${params.BIRTHDAY} ${params.BIRTHMONTH}", returnStdout: true).trim()
+                    def output = sh(script: "bash FinalProject.ps1 ${params.NAME} ${params.BIRTHDAY} ${params.BIRTHMONTH}", returnStdout: true).trim()
                     writeFile file: OUTPUT_FILE, text: "<html><body><h1>Output</h1><p>${output}</p></body></html>"
                 }
             }
