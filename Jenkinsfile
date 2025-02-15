@@ -2,104 +2,47 @@ pipeline {
     agent any
 
     parameters {
-        string(name: 'NAME', defaultValue: 'Adiel', description: 'Enter name')
-        string(name: 'BIRTHDAY', defaultValue: '1', description: 'Enter birthday (1-31)')
-        string(name: 'BIRTHMONTH', defaultValue: '1', description: 'Enter birth month (1-12)')
-    }
-
-    environment {
-        OUTPUT_FILE = 'output.html'
+        string(name: 'NAME', defaultValue: 'John Doe', description: 'Enter your name')
+        string(name: 'AGE', defaultValue: '30', description: 'Enter your age')
     }
 
     stages {
-        stage('Validate Parameters') {
+        stage('Validate Input & Calculate Year of Birth') {
             steps {
                 script {
-                    if (!params.NAME.matches("[a-zA-Z]+")) {
-                        error "NAME must contain only letters (no numbers or special characters)."
-                    }
-                    def birthday = params.BIRTHDAY.toInteger()
-                    if (birthday < 1 || birthday > 31) {
-                        error "BIRTHDAY must be a number between 1 and 31."
-                    }
-                    def birthMonth = params.BIRTHMONTH.toInteger()
-                    if (birthMonth < 1 || birthMonth > 12) {
-                        error "BIRTHMONTH must be a number between 1 and 12."
-                    }
-                }
-            }
-        }
+                    def name = params.NAME.trim()
+                    def age = params.AGE.trim()
+                    def currentYear = new Date().format("yyyy").toInteger()
+                    def outputMessage = ""
 
-        stage('Clone Repository') {
-            steps {
-                git branch: 'main', url: 'https://github.com/adiellll4/DevOps_Final.git'
-            }
-        }
-
-        stage('Prepare Shell Script') {
-            steps {
-                script {
-                    // אם צריך להוסיף הרשאת הרצה לקובץ
-                    sh 'chmod +x FinalProject.sh'
-                }
-            }
-        }
-
-        stage('Run Shell Script') {
-            steps {
-                script {
-                    def output = sh(script: "bash FinalProject.sh ${params.NAME} ${params.BIRTHDAY} ${params.BIRTHMONTH}", returnStdout: true).trim()
-                    writeFile file: OUTPUT_FILE, text: "<html><body><h1>Output</h1><p>${output}</p></body></html>"
-                }
-            }
-        }
-
-        stage('Display Parameter') {
-            steps {
-                script {
-                    currentBuild.description = "Name: ${params.NAME}, Birthday: ${params.BIRTHDAY}, Birth Month: ${params.BIRTHMONTH}"
-                }
-            }
-        }
-
-        stage('Verify Parameter on Web Page') {
-            steps {
-                script {
-                    def description = currentBuild.description
-                    if (description.contains("${params.NAME}")) {
-                        echo "Parameter ${params.NAME} exists on the web page."
+                    // בדיקת שם – חייב להכיל רק אותיות ורווחים (ללא מספרים/תווים מיוחדים)
+                    if (!(name ==~ /^[A-Za-z\s]+$/)) {
+                        outputMessage = "<h2 style='color:red;'>Invalid Input: Name must contain only letters and spaces.</h2>"
+                        echo "Invalid name input!"
+                    } else if (!age.isInteger()) {
+                        outputMessage = "<h2 style='color:red;'>Invalid Input: Age must be a valid number.</h2>"
+                        echo "Invalid age input!"
                     } else {
-                        error "Parameter ${params.NAME} does not exist on the web page."
-                    }
-                }
-            }
-        }
-
-        stage('Send HTTP Request') {
-            steps {
-                script {
-                    def outputContent = sh(script: "cat ${OUTPUT_FILE}", returnStdout: true).trim()
-                    def requestBody = """
-                        {
-                            "name": "${params.NAME}",
-                            "birthday": "${params.BIRTHDAY}",
-                            "birthMonth": "${params.BIRTHMONTH}",
-                            "output": "${outputContent}"
+                        def ageInt = age.toInteger()
+                        if (ageInt > 0 && ageInt < 150) {
+                            def birthYear = currentYear - ageInt
+                            outputMessage = "<h2>Hello ${name}!</h2><p>Your estimated birth year is: <strong>${birthYear}</strong></p>"
+                            echo "Valid input. Calculated birth year: ${birthYear}"
+                        } else {
+                            outputMessage = "<h2 style='color:red;'>Invalid Input: Age must be a positive number less than 150.</h2>"
+                            echo "Invalid age input!"
                         }
-                    """
-                    try {
-                        def response = httpRequest(
-                            acceptType: 'APPLICATION_JSON', 
-                            contentType: 'APPLICATION_JSON', 
-                            httpMode: 'POST', 
-                            url: 'https://your-api-endpoint.com/your-path', 
-                            requestBody: requestBody
-                        )
-                        echo "Response: ${response}"
-                    } catch (Exception e) {
-                        echo "HTTP request failed: ${e.getMessage()}"
-                        error "Failed to send HTTP request."
                     }
+
+                    // שמירת הפלט בקובץ HTML להצגה ב-Jenkins
+                    writeFile file: 'output.html', text: """
+                        <html>
+                        <head><title>Jenkins Output</title></head>
+                        <body>
+                        ${outputMessage}
+                        </body>
+                        </html>
+                    """
                 }
             }
         }
@@ -107,16 +50,15 @@ pipeline {
 
     post {
         always {
-            archiveArtifacts artifacts: OUTPUT_FILE, fingerprint: true
+            // פרסום הקובץ ב-Jenkins HTML Publisher Plugin
             publishHTML(target: [
                 allowMissing: false,
                 alwaysLinkToLastBuild: true,
                 keepAll: true,
-                reportDir: '.',
-                reportFiles: OUTPUT_FILE,
-                reportName: 'Shell Script Output'
+                reportDir: '',
+                reportFiles: 'output.html',
+                reportName: 'User Data Output'
             ])
         }
     }
 }
-
