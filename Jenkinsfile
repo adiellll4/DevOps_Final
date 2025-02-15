@@ -36,11 +36,11 @@ pipeline {
             }
         }
 
-        stage('Prepare Shell Script') {
+        stage('Prepare PowerShell Script') {
             steps {
                 script {
-                    // אם צריך להוסיף הרשאת הרצה לקובץ
-                    bat 'chmod +x FinalProject.ps1'
+                    // לא צריך chmod ב-Windows, אנחנו רק יכולים להריץ את הסקריפט
+                    echo "Preparing to run PowerShell script..."
                 }
             }
         }
@@ -48,7 +48,7 @@ pipeline {
         stage('Run PowerShell Script') {
             steps {
                 script {
-                    // הרצת סקריפט PowerShell
+                    // הרצת סקריפט PowerShell עם משתנים
                     def output = bat(script: "powershell -ExecutionPolicy Bypass -File FinalProject.ps1 ${params.NAME} ${params.BIRTHDAY} ${params.BIRTHMONTH}", returnStdout: true).trim()
                     writeFile file: OUTPUT_FILE, text: "<html><body><h1>Output</h1><p>${output}</p></body></html>"
                 }
@@ -79,7 +79,7 @@ pipeline {
         stage('Send HTTP Request') {
             steps {
                 script {
-                    def outputContent = sh(script: "cat ${OUTPUT_FILE}", returnStdout: true).trim()
+                    def outputContent = readFile(OUTPUT_FILE).trim()
                     def requestBody = """
                         {
                             "name": "${params.NAME}",
