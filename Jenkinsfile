@@ -40,7 +40,7 @@ pipeline {
             steps {
                 script {
                     // אם צריך להוסיף הרשאת הרצה לקובץ
-                    sh 'chmod +x FinalProject.ps1'
+                    bat 'chmod +x FinalProject.ps1'
                 }
             }
         }
@@ -49,7 +49,7 @@ pipeline {
             steps {
                 script {
                     // הרצת סקריפט PowerShell
-                    def output = sh(script: "powershell -ExecutionPolicy Bypass -File FinalProject.ps1 ${params.NAME} ${params.BIRTHDAY} ${params.BIRTHMONTH}", returnStdout: true).trim()
+                    def output = bat(script: "powershell -ExecutionPolicy Bypass -File FinalProject.ps1 ${params.NAME} ${params.BIRTHDAY} ${params.BIRTHMONTH}", returnStdout: true).trim()
                     writeFile file: OUTPUT_FILE, text: "<html><body><h1>Output</h1><p>${output}</p></body></html>"
                 }
             }
