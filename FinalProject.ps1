@@ -1,14 +1,7 @@
-# בקש מהמשתמש להזין את שמו הפרטי
-Write-Host "הזן את שמך הפרטי:"
-$first_name = Read-Host
-
-# בקש מהמשתמש להזין את יום הלידה
-Write-Host "הזן את יום הלידה (1-31):"
-$birth_day = Read-Host
-
-# בקש מהמשתמש להזין את חודש הלידה
-Write-Host "הזן את חודש הלידה (1-12):"
-$birth_month = Read-Host
+# קבל את הערכים שהוזנו כפרמטרים
+$first_name = $args[0]  # שם פרטי
+$birth_day = $args[1]    # יום הלידה
+$birth_month = $args[2]  # חודש הלידה
 
 # הצג את המידע שהוזן
 Write-Host "השם שלך הוא: $first_name"
